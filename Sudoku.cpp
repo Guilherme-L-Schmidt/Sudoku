@@ -6,6 +6,7 @@
 // Definição de variáveis principais
 int matriz_numeros_disponiveis[9][9][9], matriz_resposta[9][9], matriz_incompleta[9][9][3];
 
+int SudokuCreation();
 void GerarResposta();
 void NumAleatorio(int i, int j);
 void NumCerto();
@@ -17,7 +18,7 @@ void Backtrack(int i, int j);
 void Remover(int dificuldade);
 int Resolver();
 
-int main() {
+int SudokuCreation() {
 	srand(time(NULL));
 
 	// Certo 1 = Sudoku valido
