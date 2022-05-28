@@ -1,3 +1,4 @@
+#include "Sudoku.h"
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 // Definição de variáveis principais
 int matriz_numeros_disponiveis[9][9][9], matriz_resposta[9][9], matriz_incompleta[9][9][3];
 
-int SudokuCreation();
+void SudokuCreation(int dificuldade);
 void GerarResposta();
 void NumAleatorio(int i, int j);
 void NumCerto();
@@ -18,7 +19,7 @@ void Backtrack(int i, int j);
 void Remover(int dificuldade);
 int Resolver();
 
-int SudokuCreation() {
+void SudokuCreation(int dificuldade) {
 	srand(time(NULL));
 
 	// Certo 1 = Sudoku valido
@@ -38,10 +39,23 @@ int SudokuCreation() {
 			}
 		}
 		n++;
-		// printf("Tentativa %d \n", n);
 	}
 
+
+	Remover(dificuldade);
+
+	// Atribuir a condição "alterável" (0) à matriz incompleta
+	for (int i = 0; i < 9; i++) {
+		for (int j = 0; j < 9; j++) {
+			if (matriz_incompleta[i][j][0] == 0)
+				matriz_incompleta[i][j][1] = 0;
+			else
+				matriz_incompleta[i][j][1] = 1;
+		}
+	}
+	
 	// Printar matriz resposta
+	
 	for (int i = 0; i < 9; i++) {
 		for (int j = 0; j < 9; j++) {
 			printf("%d ", matriz_resposta[i][j]);
@@ -53,24 +67,8 @@ int SudokuCreation() {
 			printf("---------------------- \n");
 		}
 	}
-	printf("\n\n");
-
-	Remover(81);
-
-	// Printar matriz a ser resolvida
-	for (int i = 0; i < 9; i++) {
-		for (int j = 0; j < 9; j++) {
-			printf("%d ", matriz_incompleta[i][j][0]);
-			if (j == 2 || j == 5)
-				printf("| ");
-		}
-		printf("\n");
-		if (i == 2 || i == 5) {
-			printf("---------------------- \n");
-		}
-	}
-
-	return n;
+	printf("\n \n");
+	
 }
 
 void GerarResposta() {
