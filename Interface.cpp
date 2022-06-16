@@ -3,6 +3,7 @@
 #include <string.h>
 #include <raylib.h>
 #include "Sudoku.h"
+#include "Saving.h"
 
 // Variáveis globais do Sudoku
 float grid[8][2], pontos[9][24][2], num[9][9][2];
@@ -20,7 +21,7 @@ int dificuldade = 1;
 void SudokuPoints(float scale, int pos[2]);
 void GenerateSudoku(float scale);
 void MenuPoints(float scale, int pos[2]);
-int Menu(float scale, int pos[2]);
+int Menu(float scale, int pos[2], bool saved_games[3]);
 int Jogo(int selected[2], float scale, int stdPos[2], time_t tempo);
 bool Inserir(int i, int j);
 bool Check();
@@ -61,27 +62,20 @@ int main(void) {
     while (!WindowShouldClose()) {
         switch (estado) {
         case 0:
+            {bool saved_games[3];
             if (x) {
                 x = false;
                 y = true;
+
+                for (int n = 0; n < 3; n++) {
+                    saved_games[n] = LoadGame(matriz_incompleta, matriz_resposta, n);
+                }
             }
-            estado = Menu(scale, stdPos);            
+            estado = Menu(scale, stdPos, saved_games);
+            }
             break;
         case 1:
             if (y) {
-                int dif = 50;
-                switch (dificuldade) {
-                case 0:
-                    dif = 25;
-                    break;
-                case 1:
-                    dif = 50;
-                    break;
-                case 2:
-                    dif = 81;
-                    break;
-                }
-                SudokuCreation(dif);
                 y = false;
                 x = true;
                 tempo = time(NULL);
@@ -89,6 +83,10 @@ int main(void) {
             estado = Jogo(selected, scale, stdPos, tempo);            
             break;
         }  
+    }
+    if (estado == 1) {
+        printf("Salvo\n");
+        SaveGame(matriz_incompleta, matriz_resposta, dificuldade);
     }
 
     // Fechamento da janela e do contexto OpenGL
@@ -196,24 +194,26 @@ void MenuPoints(float scale, int pos[2]) {
     bot_menu_pos[2][0] = pos[0] + scale;
     bot_menu_pos[0][1] = bot_menu_pos[1][1] = bot_menu_pos[2][1] = pos[1];
     bot_menu_pos[3][1] = pos[1] + scale / 2;
+    bot_menu_pos[4][1] = pos[1] + scale;
 
     // Definição da área dos botões do menu
+    // bot_menu_pos - 1
     bot_menu[0] = { bot_menu_pos[1][0] - scale / 6, bot_menu_pos[1][1] - scale / 6, scale / 3, scale / 3 };
     bot_menu[1] = { bot_menu_pos[2][0] - scale / 6, bot_menu_pos[2][1] - scale / 6, scale / 3, scale / 3 };
     bot_menu[2] = { bot_menu_pos[3][0] - scale * 5 / 6, bot_menu_pos[3][1] - scale / 6, scale * 10 / 6, scale / 3 };
+    bot_menu[3] = { bot_menu_pos[4][0] - scale * 5 / 6, bot_menu_pos[4][1] - scale / 6, scale * 10 / 6, scale / 3 };
 }
 
-int Menu(float scale, int pos[2]) {
+int Menu(float scale, int pos[2], bool saved_games[3]) {
 
     // Definição de um vetor representativo de posições do mouse
     Vector2 mousePoint = GetMousePosition();
 
     int selected = -1;
-    bool iniciar = false;
     
     // Detecção de cliques em casas botões do menu
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 4; i++) {
             if (CheckCollisionPointRec(mousePoint, bot_menu[i])) {
                 switch (i) {
                 case 0:
@@ -225,8 +225,27 @@ int Menu(float scale, int pos[2]) {
                         dificuldade++;
                     break;
                 case 2:
-                    iniciar = true;
+                    {int dif = 50;
+                    switch (dificuldade) {
+                    case 0:
+                        dif = 25;
+                        break;
+                    case 1:
+                        dif = 50;
+                        break;
+                    case 2:
+                        dif = 81;
+                        break;
+                    }
+                    SudokuCreation(dif);
+                    }
                     return 1;
+                    break;
+                case 3:
+                    if (saved_games[dificuldade]) {
+                        LoadGame(matriz_incompleta, matriz_resposta, dificuldade);
+                        return 1;
+                    }
                     break;
                 default:
                     break;
@@ -245,6 +264,7 @@ int Menu(float scale, int pos[2]) {
             DrawLineEx({ grid_menu[i][0], grid_menu[i][1] }, { grid_menu[i + 1][0], grid_menu[i + 1][1] }, scale / 40, LIME);
     }
 
+    // Escreve a dificuldade na tela
     char dif[10];
     switch (dificuldade) {
     case 0:
@@ -262,6 +282,7 @@ int Menu(float scale, int pos[2]) {
     Vector2 offset = MeasureTextEx(GetFontDefault(), dif, 40, 5);
     DrawTextEx(GetFontDefault(), dif, {bot_menu_pos[0][0] - offset.x / 2, bot_menu_pos[0][1] - offset.y / 2}, 40, 5, GRAY);
 
+    // Desenha as setas de seleção de dificuldade
     if (dificuldade > 0) {
         DrawCircle(bot_menu_pos[1][0], bot_menu_pos[1][1], scale / 10, LIGHTGRAY);
         DrawLineEx({ bot_menu_pos[1][0] + scale / 30, bot_menu_pos[1][1] + scale / 15 }, {bot_menu_pos[1][0] - scale / 30, bot_menu_pos[1][1]}, scale / 100, GRAY);
@@ -273,9 +294,17 @@ int Menu(float scale, int pos[2]) {
         DrawLineEx({ bot_menu_pos[2][0] + scale / 30, bot_menu_pos[2][1] }, { bot_menu_pos[2][0] - scale / 30, bot_menu_pos[2][1] - scale / 15 }, scale / 100, GRAY);
     }
 
+    // Desenha o batão "Novo Jogo"
     char ini[10] = "Novo Jogo";
-    Vector2 offset2 = MeasureTextEx(GetFontDefault(), ini, 40, 5);
-    DrawTextEx(GetFontDefault(), ini, { bot_menu_pos[3][0] - offset2.x / 2, bot_menu_pos[3][1] - offset2.y / 2 }, 40, 5, BLACK);
+    Vector2 offset2 = MeasureTextEx(GetFontDefault(), ini, scale / 4.5, scale / 36);
+    DrawTextEx(GetFontDefault(), ini, { bot_menu_pos[3][0] - offset2.x / 2, bot_menu_pos[3][1] - offset2.y / 2 }, scale / 4.5, scale / 36, BLACK);
+
+    // Desenha o botão "Continuar" se houver jogo salvo
+    if (saved_games[dificuldade]) {
+        char cont[10] = "Continuar";
+        Vector2 offset3 = MeasureTextEx(GetFontDefault(), cont, scale / 4.5, scale / 36);
+        DrawTextEx(GetFontDefault(), cont, { bot_menu_pos[4][0] - offset3.x / 2, bot_menu_pos[4][1] - offset3.y / 2 }, scale / 4.5, scale / 36, BLACK);
+    }
 
     ClearBackground(RAYWHITE);
 
