@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+
+// Parâmetros importantes para os tempos obtidos
+typedef struct {
+	int ponts;
+	int horas;
+	int minutos;
+	int dia;
+	int mes;
+	int ano;
+} tempos;
 
 void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 	// Abre o arquivo em que será salvo o jogo
 	FILE *jogo = NULL;
 	errno_t error;
 
+	// Checa qual dos arquivos abrir, baseado na dificuldade
 	switch (dificuldade) {
 	case 0:
 		error = fopen_s(&jogo, "save_game_facil.txt", "w+");
@@ -19,8 +31,9 @@ void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 		break;
 	}
 
+	// Detecta se houveram erros ao abrir o arquivo
 	if (jogo == NULL) {
-		printf("Erro em salvar jogo. Erro %d\n", error);
+		printf("Erro ao abrir save_game (escrita). Erro %d\n", error);
 	}
 	else {
 		// Salva a matriz incompleta modificada pelo jogador
@@ -50,7 +63,8 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 	// Abre o arquivo em que foi salvo o jogo
 	FILE* jogo = NULL;
 	errno_t error;
-
+	
+	// Checa qual dos arquivos abrir, baseado na dificuldade
 	switch (dificuldade) {
 	case 0:
 		error = fopen_s(&jogo, "save_game_facil.txt", "r+");
@@ -66,7 +80,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 
 	// Identifica falha em carregar
 	if (jogo == NULL) {
-		printf("Erro ao carregar. Erro %d\n", error);
+		printf("Erro ao abir save_game (leitura). Erro %d\n", error);
 		return 0;
 	}
 	else {
@@ -104,10 +118,10 @@ void SaveConfig(int cor) {
 	FILE* config;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration", "W");
+	error = fopen_s(&config, "configuration", "w+");
 
 	if (error) {
-		printf("Erro em salvar configuracoes\n");
+		printf("Erro em abir config para escrita. Erro %d\n", error);
 	}
 	else {
 		// Salva a configuração de cor
@@ -124,19 +138,263 @@ int LoadConfig() {
 	FILE* config;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration", "r");
+	error = fopen_s(&config, "configuration", "r+");
 
 	// Identifica falha em carregar
 	if (error) {
-		printf("Erro ao carregar\n");
+		printf("Erro ao carregar config para leitura. Erro %d\n", error);
 		return 0;
 	}
 	else {
 		if (fscanf_s(config, "%d", &cor) != 1) {
-			printf("Erro ao carregar respostas\n");
+			printf("Erro ao salvar config\n");
 			return 0;
 		}
 
 		return cor;
 	}
+}
+
+void SaveAllScores (int score, int dificuldade) {
+	// Abre o arquivo de pontuações
+	FILE* scores;
+	errno_t error;
+
+	tempos saves[10];
+	int count = 0;
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "scores_facil.txt", "r+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "scores_medio.txt", "r+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "scores_dificil.txt", "r+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em abrir all scores. Erro %d\n", error);
+	}
+	else {
+		// Lê o número de scores exisentes
+		while (fscanf_s(scores, "%d %d %d %d %d %d", &saves[count].ponts, &saves[count].horas, &saves[count].minutos, &saves[count].dia, &saves[count].mes, &saves[count].ano) != EOF && count < 9) {
+			count++;
+		}
+		printf("%d linhas lidas em all_scores\n", count);
+		fclose(scores);
+	}
+
+	for (int n = count-1; n >= 0; n--) {
+		saves[n + 1] = saves[n];
+	}
+
+	// Determinação do tempo local
+	time_t temp;
+	time(&temp);
+	struct tm local;
+	localtime_s(&local, &temp);
+
+	saves[0] = { score, local.tm_hour, local.tm_min, local.tm_mday, local.tm_mon, local.tm_year };
+
+	printf("Save all scores iniciado\n");
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "scores_facil.txt", "w+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "scores_medio.txt", "w+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "scores_dificil.txt", "w+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em salvar all scores. Erro %d\n", error);
+	}
+	else {
+		// Salva as pontuações
+		for (int n = 0; n <= count; n++) {
+			fprintf(scores, "%d %d %d %d %d %d\n", saves[n].ponts, saves[n].horas, saves[n].minutos, saves[n].dia, saves[n].mes, saves[n].ano);
+		}
+		fclose(scores);
+	}
+}
+
+void SaveHighScores(int score, int dificuldade) {
+	// Abre o arquivo de pontuações
+	FILE* scores;
+	errno_t error;
+
+	tempos saves[3];
+	int count = 0;
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "high_scores_facil.txt", "r+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "high_scores_medio.txt", "r+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "high_scores_dificil.txt", "r+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em abrir high scores. Erro %d\n", error);
+	}
+	else {
+		// Lê o número de scores exisentes
+		while (fscanf_s(scores, "%d %d %d %d %d %d", &saves[count].ponts, &saves[count].horas, &saves[count].minutos, &saves[count].dia, &saves[count].mes, &saves[count].ano) != EOF && count < 3) {
+			count++;
+		}
+		printf("%d linhas lidas em high_scores\n", count);
+
+		fclose(scores);
+	}
+
+	// Determinação do tempo local
+	time_t temp;
+	time(&temp);
+	struct tm local;
+	localtime_s(&local, &temp);
+
+	if (count == 0) {
+		saves[0] = { score, local.tm_hour, local.tm_min, local.tm_mday, local.tm_mon, local.tm_year };
+	}
+	else {
+		int ordem = 0;
+		for (int n = 0; n < count; n++) {
+			if (score > saves[n].ponts) {
+				ordem++;
+			}
+		}
+
+		switch (ordem) {
+		case 0:
+			if (count > 0) {
+				saves[2] = saves[1];
+			}
+			saves[1] = saves[0];
+			saves[0] = { score, local.tm_hour, local.tm_min, local.tm_mday, local.tm_mon, local.tm_year };
+			break;
+		case 1:
+			if (count > 0) {
+				saves[2] = saves[1];
+			}
+			saves[1] = { score, local.tm_hour, local.tm_min, local.tm_mday, local.tm_mon, local.tm_year };
+			break;
+		case 2:
+			saves[2] = { score, local.tm_hour, local.tm_min, local.tm_mday, local.tm_mon, local.tm_year };
+			break;
+		default:
+			break;
+		}
+	}
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "high_scores_facil.txt", "w+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "high_scores_medio.txt", "w+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "high_scores_dificil.txt", "w+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em salvar high scores. Erro %d\n", error);
+	}
+	else {
+		// Salva as pontuações
+		if (count == 3) {
+			count--;
+		}
+		for (int n = 0; n <= count; n++) {
+			fprintf(scores, "%d %d %d %d %d %d\n", saves[n].ponts, saves[n].horas, saves[n].minutos, saves[n].dia, saves[n].mes, saves[n].ano);
+		}
+
+		fclose(scores);
+	}
+}
+
+int LoadAllScores(int dificuldade, tempos saves[10]) {
+	// Abre o arquivo de pontuações
+	FILE* scores;
+	errno_t error;
+
+	int count = 0;
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "scores_facil.txt", "r+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "scores_medio.txt", "r+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "scores_dificil.txt", "r+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em abrir all scores. Erro %d\n", error);
+	}
+	else {
+		// Lê o número de scores exisentes
+		while (fscanf_s(scores, "%d %d %d %d %d %d", &saves[count].ponts, &saves[count].horas, &saves[count].minutos, &saves[count].dia, &saves[count].mes, &saves[count].ano) != EOF && count < 10) {
+			count++;
+		}
+		printf("%d linhas lidas em all_scores\n", count);
+		fclose(scores);
+	}
+
+	return count;
+}
+
+int LoadHighScores(int dificuldade, tempos saves[3]) {
+	// Abre o arquivo de pontuações
+	FILE* scores;
+	errno_t error;
+
+	int count = 0;
+
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&scores, "high_scores_facil.txt", "r+");
+		break;
+	case 1:
+		error = fopen_s(&scores, "high_scores_medio.txt", "r+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&scores, "high_scores_dificil.txt", "r+");
+		break;
+	}
+
+	if (error) {
+		printf("Erro em abrir high scores. Erro %d\n", error);
+	}
+	else {
+		// Lê o número de scores exisentes
+		while (fscanf_s(scores, "%d %d %d %d %d %d", &saves[count].ponts, &saves[count].horas, &saves[count].minutos, &saves[count].dia, &saves[count].mes, &saves[count].ano) != EOF && count < 3) {
+			count++;
+		}
+		printf("%d linhas lidas em high_scores\n", count);
+		fclose(scores);
+	}
+
+	return count;
 }
