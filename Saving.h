@@ -11,8 +11,8 @@ typedef struct {
 	int ano;
 } tempos;
 
-void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade);
-int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade);
+void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int tempo);
+int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* tempo);
 void SaveConfig(int cor);
 int LoadConfig();
 void SaveAllScores(int score, int dificuldade);

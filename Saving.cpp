@@ -12,7 +12,7 @@ typedef struct {
 	int ano;
 } tempos;
 
-void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
+void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int tempo) {
 	// Abre o arquivo em que será salvo o jogo
 	FILE *jogo = NULL;
 	errno_t error;
@@ -53,13 +53,16 @@ void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 			}
 		}
 
+		// Salva o tempo de jogo
+		fprintf(jogo, "%d", tempo);
+
 		// Fecha o arquivo
 		fclose(jogo);
 		printf("Jogo salvo\n");
 	}
 }
 
-int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
+int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* tempo) {
 	// Abre o arquivo em que foi salvo o jogo
 	FILE* jogo = NULL;
 	errno_t error;
@@ -104,6 +107,12 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade) {
 					return 0;
 				}
 			}
+		}
+
+		// Carrega o tempo de jogo
+		if (fscanf_s(jogo, "%d", tempo) != 1) {
+			printf("Erro ao ler tempo\n");
+			return 0;
 		}
 
 		// Fecha o arquivo

@@ -11,6 +11,7 @@ float quadrado[3][3][2];
 Rectangle bot[9][9];
 bool vitoria = false;
 int timer = 0;
+int tempo_prev = 0;
 
 // Variáveis globais do Menu
 float grid_menu[8][2];
@@ -78,7 +79,8 @@ int main(void) {
                 
                 // Checa a existência de jogos salvos
                 for (int n = 0; n < 3; n++) {
-                    saved_games[n] = LoadGame(matriz_incompleta, matriz_resposta, n);
+                    saved_games[n] = LoadGame(matriz_incompleta, matriz_resposta, n, &tempo_prev);
+                    tempo_prev = 0;
                 }
             }
             // Muda o estado baseado em escolhas do menu
@@ -111,7 +113,7 @@ int main(void) {
     }
     if (estado == 1) {
         printf("Salvo\n");
-        SaveGame(matriz_incompleta, matriz_resposta, dificuldade);
+        SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
     }
 
     // Fechamento da janela e do contexto OpenGL
@@ -270,7 +272,7 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
                     break;
                 case 3:
                     if (saved_games[dificuldade]) {
-                        LoadGame(matriz_incompleta, matriz_resposta, dificuldade);
+                        LoadGame(matriz_incompleta, matriz_resposta, dificuldade, &tempo_prev);
                         return 1;
                     }
                     break;
@@ -380,7 +382,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
                 }
             }
             if (CheckCollisionPointRec(mousePoint, voltar)) {
-                SaveGame(matriz_incompleta, matriz_resposta, dificuldade);
+                SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
                 return 0;
             }
         }
@@ -407,7 +409,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
                 vitoria = Inserir(selected[0], selected[1]);
             }
         }
-        timer = time(NULL) - tempo;
+        timer = time(NULL) - tempo + tempo_prev;
     }
 
     ClearBackground(color2);
@@ -418,7 +420,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
     Vector2 offset = MeasureTextEx(GetFontDefault(), temp, scale * 7 / 40, 2);
     DrawTextEx(GetFontDefault(), temp, { stdPos[0] - offset.x / 2, stdPos[1] / 12 - offset.y / 2 }, scale * 7 / 40, 2, color1);
 
-    //
+    // Tela de fim de jogo
     if (vitoria == true) {
         DrawRectangleV({ stdPos[0] - scale * 2 - scale * 0.02f, stdPos[1] - scale - scale * 0.02f }, { scale * 4 + scale * 0.04f, scale * 2 + scale * 0.04f }, color1);
         DrawRectangleV({ stdPos[0] - scale * 2, stdPos[1] - scale }, { scale * 4, scale * 2 }, color2);
