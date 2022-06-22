@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <raylib.h>
@@ -12,6 +13,7 @@ Rectangle bot[9][9];
 bool vitoria = false;
 int timer = 0;
 int tempo_prev = 0;
+bool dicar = true;
 
 // Variáveis globais do Menu
 float grid_menu[8][2];
@@ -33,6 +35,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo);
 bool Inserir(int i, int j);
 bool Check();
 int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3], int num_melhor, int num_total);
+bool Dica();
 
 int main(void) {
     // Definição do tamanho da janela
@@ -94,6 +97,7 @@ int main(void) {
                 z = true;
                 // Inicia o timer do jogo
                 tempo = time(NULL);
+                dicar = true;
             }
             // Muda o estado quando finalizado o jogo
             estado = Jogo(selected, scale, stdPos, tempo);            
@@ -351,9 +355,13 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
 }
 
 int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
-
     // Definição de um vetor representativo de posições do mouse
     Vector2 mousePoint = GetMousePosition();
+
+    BeginDrawing();
+
+    // Desenho da matriz do Sudoku
+    GenerateSudoku(scale);
 
     // Definição do botão voltar
     DrawCircleV({ scale / 2, scale / 2 }, scale / 9, color3);
@@ -361,10 +369,17 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
     DrawLineEx({ scale / 2 - scale / 28, scale / 2 }, { scale / 2 + scale / 28, scale / 2 - scale / 14 }, scale / 90, color4);
     Rectangle voltar = { scale / 2 - scale / 9, scale / 2 - scale / 9,  scale * 2 / 9, scale * 2 / 9 };
 
-    BeginDrawing();
-
-    // Desenho da matriz do Sudoku
-    GenerateSudoku(scale);
+    // Definição do botão dica
+    Color cor1_dica = color3, cor2_dica = color3;
+    if (dicar) {
+        cor1_dica = color1;
+        cor2_dica = color4;
+    }
+    DrawRectangleV({ stdPos[0] + scale * 2.8f - scale / 4 - scale * 0.02f, stdPos[1] - scale * 1.5f - scale / 12 - scale * 0.02f }, { scale / 2 + scale * 0.04f, scale / 6 + scale * 0.04f }, cor1_dica);
+    DrawRectangleV({ stdPos[0] + scale * 2.8f - scale / 4, stdPos[1] - scale * 1.5f - scale / 12 }, { scale / 2, scale / 6 }, color2);
+    Vector2 offset_dica = MeasureTextEx(GetFontDefault(), "Dica", scale / 8, scale / 50);
+    DrawTextEx(GetFontDefault(), "Dica", {stdPos[0] + scale * 2.8f - offset_dica.x / 2, stdPos[1] - scale * 1.5f - offset_dica.y / 2}, scale / 8, scale / 50, cor2_dica);
+    Rectangle dica = { stdPos[0] + scale * 2.8f - scale / 3, stdPos[1] - scale * 1.5f - scale / 12, scale / 2, scale / 6 };
 
     // Checa a vitória
     if (vitoria == false) {
@@ -384,6 +399,9 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
             if (CheckCollisionPointRec(mousePoint, voltar)) {
                 SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
                 return 0;
+            }
+            else if (CheckCollisionPointRec(mousePoint, dica)) {
+                dicar = Dica();
             }
         }
 
@@ -556,4 +574,34 @@ int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3],
     EndDrawing();
 
     return 2;
+}
+
+bool Dica() {
+    // Escolha de uma casa aleatória para ser revelada
+    srand(time(NULL));
+    int* index = (int*) calloc(81, sizeof(int));
+    int h = 0;
+    if (index) {
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (matriz_incompleta[i][j][0] == 0) {
+                    index[h] = i * 9 + j;
+                    h++;
+                }
+            }
+        }
+        if (h > 1) {
+            int revelada = index[rand() % h];
+            matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][0] = matriz_resposta[(revelada - revelada % 9) / 9][revelada % 9];
+            matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][1] = 1;
+            // Penalidade de tempo pela dica
+            tempo_prev += 25;
+        }
+        else {
+            return false;
+        }
+        free(index);
+        printf("Dica fornecida\n");
+    }
+    return true;
 }
