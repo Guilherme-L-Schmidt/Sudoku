@@ -6,6 +6,25 @@
 #include "Sudoku.h"
 #include "Saving.h"
 
+// Definição do struct de cores
+typedef struct {
+    Color color1;       // Cor tema
+    Color color2;       // Background
+    Color color3;       // Cor destaque
+    Color color4;       // Cor texto 
+} cores_tema;
+
+// Definição de cores possíveis no jogo
+cores_tema themes[5] = {
+ { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} }, 
+ { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} },
+ { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} }, 
+ { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} },
+ { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} } };
+
+// Determinação da cor a ser utilizada no jogo
+int color_used = LoadConfig();
+
 // Variáveis globais do Sudoku
 float grid[8][2], pontos[9][24][2], num[9][9][2];
 float quadrado[3][3][2];
@@ -21,12 +40,6 @@ float bot_menu_pos[6][2];
 Rectangle bot_menu[5];
 int dificuldade = 1;
 
-// Cores
-Color color1 = { 47,160,46,255 };       // Cor tema
-Color color2 = { 17,17,17,255 };        // Background
-Color color3 = { 38,35,31,255 };        // Cor destaque
-Color color4 = { 200,213,200,255 };     // Cor texto
-
 void SudokuPoints(float scale, float pos[2]);
 void GenerateSudoku(float scale);
 void MenuPoints(float scale, float pos[2]);
@@ -36,6 +49,7 @@ bool Inserir(int i, int j);
 bool Check();
 int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3], int num_melhor, int num_total);
 bool Dica();
+void Cores(float stdPos[2], float scale, Vector2 mousePoint);
 
 int main(void) {
     // Definição do tamanho da janela
@@ -179,17 +193,17 @@ void SudokuPoints(float scale, float pos[2]) {
 void GenerateSudoku(float scale) {
     // Desenho da grade
     for (int i = 0; i < 8; i++) {
-        DrawCircleV({ grid[i][0], grid[i][1] }, scale / 70, color1);
+        DrawCircleV({ grid[i][0], grid[i][1] }, scale / 70, themes[color_used].color1);
         if (i % 2 == 0)
-            DrawLineEx({ grid[i][0], grid[i][1] }, {grid[i + 1][0], grid[i + 1][1]}, scale / 35, color1);
+            DrawLineEx({ grid[i][0], grid[i][1] }, {grid[i + 1][0], grid[i + 1][1]}, scale / 35, themes[color_used].color1);
     }
 
     // Desenho das grades internas
     for (int i = 0; i < 24; i++) {
         for (int j = 0; j < 9; j++) {
-            DrawCircleV({ pontos[j][i][0], pontos[j][i][1] }, scale / 200, color1);
+            DrawCircleV({ pontos[j][i][0], pontos[j][i][1] }, scale / 200, themes[color_used].color1);
             if (i % 2 == 0)
-                DrawLineEx({ pontos[j][i][0], pontos[j][i][1] }, { pontos[j][i + 1][0], pontos[j][i + 1][1] }, scale / 100, color1);
+                DrawLineEx({ pontos[j][i][0], pontos[j][i][1] }, { pontos[j][i + 1][0], pontos[j][i + 1][1] }, scale / 100, themes[color_used].color1);
         }
     }
 
@@ -201,9 +215,9 @@ void GenerateSudoku(float scale) {
                 sprintf_s(resp, "%d", matriz_incompleta[i][j][0]);
                 Vector2 offset = MeasureTextEx(GetFontDefault(), resp, scale * 9 / 40, 1);
                 if (matriz_incompleta[i][j][1] == 1) {
-                    DrawCircleV({ num[i][j][0], num[i][j][1] }, (scale / 3 - scale / 25) / 2, color3);
+                    DrawCircleV({ num[i][j][0], num[i][j][1] }, (scale / 3 - scale / 25) / 2, themes[color_used].color3);
                 }
-                DrawTextEx(GetFontDefault(), resp, { num[i][j][0] - offset.x / 2, num[i][j][1] - offset.y / 2 }, scale * 9 / 40, 1, color4);
+                DrawTextEx(GetFontDefault(), resp, { num[i][j][0] - offset.x / 2, num[i][j][1] - offset.y / 2 }, scale * 9 / 40, 1, themes[color_used].color4);
             }
         }
     }
@@ -292,12 +306,15 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
 
     BeginDrawing();
 
+    // Implementa o botão de mudança de cor
+    Cores(pos, scale, mousePoint);
+
     // Desenho da grade
-    DrawCircleV({ pos[0], pos[1] * 4 / 9 }, scale * 7 / 9, color1);
+    DrawCircleV({ pos[0], pos[1] * 4 / 9 }, scale * 7 / 9, themes[color_used].color1);
     for (int i = 0; i < 8; i++) {
-        DrawCircleV({ grid_menu[i][0], grid_menu[i][1] }, scale / 30, color2);
+        DrawCircleV({ grid_menu[i][0], grid_menu[i][1] }, scale / 30, themes[color_used].color2);
         if (i % 2 == 0)
-            DrawLineEx({ grid_menu[i][0], grid_menu[i][1] }, { grid_menu[i + 1][0], grid_menu[i + 1][1] }, scale / 15, color2);
+            DrawLineEx({ grid_menu[i][0], grid_menu[i][1] }, { grid_menu[i + 1][0], grid_menu[i + 1][1] }, scale / 15, themes[color_used].color2);
     }
 
     // Escreve a dificuldade na tela
@@ -316,38 +333,39 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
         break;
     }
     Vector2 offset = MeasureTextEx(GetFontDefault(), dif, scale * 9 / 40, 5);
-    DrawTextEx(GetFontDefault(), dif, {bot_menu_pos[0][0] - offset.x / 2, bot_menu_pos[0][1] - offset.y / 2}, scale * 9 / 40, 5, color4);
+    DrawTextEx(GetFontDefault(), dif, {bot_menu_pos[0][0] - offset.x / 2, bot_menu_pos[0][1] - offset.y / 2}, scale * 9 / 40, 5, themes[color_used].color4);
 
     // Desenha as setas de seleção de dificuldade
     if (dificuldade > 0) {
-        DrawCircleV({ bot_menu_pos[1][0], bot_menu_pos[1][1] }, scale / 10, color3);
-        DrawLineEx({ bot_menu_pos[1][0] + scale / 30, bot_menu_pos[1][1] + scale / 15 }, {bot_menu_pos[1][0] - scale / 30, bot_menu_pos[1][1]}, scale / 100, color4);
-        DrawLineEx({ bot_menu_pos[1][0] - scale / 30, bot_menu_pos[1][1] }, { bot_menu_pos[1][0] + scale / 30, bot_menu_pos[1][1] - scale / 15 }, scale / 100, color4);
+        DrawCircleV({ bot_menu_pos[1][0], bot_menu_pos[1][1] }, scale / 10, themes[color_used].color3);
+        DrawLineEx({ bot_menu_pos[1][0] + scale / 30, bot_menu_pos[1][1] + scale / 15 }, {bot_menu_pos[1][0] - scale / 30, bot_menu_pos[1][1]}, scale / 100, themes[color_used].color4);
+        DrawLineEx({ bot_menu_pos[1][0] - scale / 30, bot_menu_pos[1][1] }, { bot_menu_pos[1][0] + scale / 30, bot_menu_pos[1][1] - scale / 15 }, scale / 100, themes[color_used].color4);
     }
     if (dificuldade < 2) {
-        DrawCircleV({ bot_menu_pos[2][0], bot_menu_pos[2][1] }, scale / 10, color3);
-        DrawLineEx({ bot_menu_pos[2][0] - scale / 30, bot_menu_pos[2][1] + scale / 15 }, { bot_menu_pos[2][0] + scale / 30, bot_menu_pos[2][1] }, scale / 100, color4);
-        DrawLineEx({ bot_menu_pos[2][0] + scale / 30, bot_menu_pos[2][1] }, { bot_menu_pos[2][0] - scale / 30, bot_menu_pos[2][1] - scale / 15 }, scale / 100, color4);
+        DrawCircleV({ bot_menu_pos[2][0], bot_menu_pos[2][1] }, scale / 10, themes[color_used].color3);
+        DrawLineEx({ bot_menu_pos[2][0] - scale / 30, bot_menu_pos[2][1] + scale / 15 }, { bot_menu_pos[2][0] + scale / 30, bot_menu_pos[2][1] }, scale / 100, themes[color_used].color4);
+        DrawLineEx({ bot_menu_pos[2][0] + scale / 30, bot_menu_pos[2][1] }, { bot_menu_pos[2][0] - scale / 30, bot_menu_pos[2][1] - scale / 15 }, scale / 100, themes[color_used].color4);
     }
 
     // Desenha o botão "Novo Jogo"
     char ini[10] = "Novo Jogo";
     Vector2 offset2 = MeasureTextEx(GetFontDefault(), ini, scale / 4.5f, scale / 36);
-    DrawTextEx(GetFontDefault(), ini, { bot_menu_pos[3][0] - offset2.x / 2, bot_menu_pos[3][1] - offset2.y / 2 }, scale / 4.5f, scale / 36.0f, color4);
+    DrawTextEx(GetFontDefault(), ini, { bot_menu_pos[3][0] - offset2.x / 2, bot_menu_pos[3][1] - offset2.y / 2 }, scale / 4.5f, scale / 36.0f, themes[color_used].color4);
 
     // Desenha o botão "Continuar" se houver jogo salvo
     if (saved_games[dificuldade]) {
         char cont[10] = "Continuar";
         Vector2 offset3 = MeasureTextEx(GetFontDefault(), cont, scale / 4.5f, scale / 36);
-        DrawTextEx(GetFontDefault(), cont, { bot_menu_pos[4][0] - offset3.x / 2, bot_menu_pos[4][1] - offset3.y / 2 }, scale / 4.5f, scale / 36.0f, color4);
+        DrawTextEx(GetFontDefault(), cont, { bot_menu_pos[4][0] - offset3.x / 2, bot_menu_pos[4][1] - offset3.y / 2 }, scale / 4.5f, scale / 36.0f, themes[color_used].color4);
     }
 
     // Desenha o botão "Pontuação"
     char pontu[15] = "Pontuacao";
     Vector2 offset4 = MeasureTextEx(GetFontDefault(), pontu, scale / 4.5f, scale / 36);
-    DrawTextEx(GetFontDefault(), pontu, { bot_menu_pos[5][0] - offset4.x / 2, bot_menu_pos[5][1] - offset4.y / 2 }, scale / 4.5f, scale / 36.0f, color4);
+    DrawTextEx(GetFontDefault(), pontu, { bot_menu_pos[5][0] - offset4.x / 2, bot_menu_pos[5][1] - offset4.y / 2 }, scale / 4.5f, scale / 36.0f, themes[color_used].color4);
 
-    ClearBackground(color2);
+    // Define acor de background
+    ClearBackground(themes[color_used].color2);
 
     EndDrawing();
 
@@ -364,19 +382,21 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
     GenerateSudoku(scale);
 
     // Definição do botão voltar
-    DrawCircleV({ scale / 2, scale / 2 }, scale / 9, color3);
-    DrawLineEx({ scale / 2 + scale / 28, scale / 2 + scale / 14 }, { scale / 2 - scale / 28, scale / 2 }, scale / 90, color4);
-    DrawLineEx({ scale / 2 - scale / 28, scale / 2 }, { scale / 2 + scale / 28, scale / 2 - scale / 14 }, scale / 90, color4);
+    DrawCircleV({ scale / 2, scale / 2 }, scale / 9, themes[color_used].color3);
+    DrawLineEx({ scale / 2 + scale / 28, scale / 2 + scale / 14 }, { scale / 2 - scale / 28, scale / 2 }, scale / 90, themes[color_used].color4);
+    DrawLineEx({ scale / 2 - scale / 28, scale / 2 }, { scale / 2 + scale / 28, scale / 2 - scale / 14 }, scale / 90, themes[color_used].color4);
     Rectangle voltar = { scale / 2 - scale / 9, scale / 2 - scale / 9,  scale * 2 / 9, scale * 2 / 9 };
 
     // Definição do botão dica
-    Color cor1_dica = color3, cor2_dica = color3;
+    // Muda a cor caso não seja mais possível dar dicas
+    Color cor1_dica = themes[color_used].color3, cor2_dica = themes[color_used].color3;
     if (dicar) {
-        cor1_dica = color1;
-        cor2_dica = color4;
+        cor1_dica = themes[color_used].color1;
+        cor2_dica = themes[color_used].color4;
     }
+    // Desenha o botão de dicas e define uma caixa de colisão
     DrawRectangleV({ stdPos[0] + scale * 2.8f - scale / 4 - scale * 0.02f, stdPos[1] - scale * 1.5f - scale / 12 - scale * 0.02f }, { scale / 2 + scale * 0.04f, scale / 6 + scale * 0.04f }, cor1_dica);
-    DrawRectangleV({ stdPos[0] + scale * 2.8f - scale / 4, stdPos[1] - scale * 1.5f - scale / 12 }, { scale / 2, scale / 6 }, color2);
+    DrawRectangleV({ stdPos[0] + scale * 2.8f - scale / 4, stdPos[1] - scale * 1.5f - scale / 12 }, { scale / 2, scale / 6 }, themes[color_used].color2);
     Vector2 offset_dica = MeasureTextEx(GetFontDefault(), "Dica", scale / 8, scale / 50);
     DrawTextEx(GetFontDefault(), "Dica", {stdPos[0] + scale * 2.8f - offset_dica.x / 2, stdPos[1] - scale * 1.5f - offset_dica.y / 2}, scale / 8, scale / 50, cor2_dica);
     Rectangle dica = { stdPos[0] + scale * 2.8f - scale / 3, stdPos[1] - scale * 1.5f - scale / 12, scale / 2, scale / 6 };
@@ -408,17 +428,17 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
         // Destaque da casa selecionada e de demais relevantes
         if (selected[0] != 10) {
             if (matriz_incompleta[selected[0]][selected[1]][0] == 0) {
-                DrawCircleV({ num[selected[0]][selected[1]][0], num[selected[0]][selected[1]][1] }, (scale / 3 - scale / 25) / 2, color1);
+                DrawCircleV({ num[selected[0]][selected[1]][0], num[selected[0]][selected[1]][1] }, (scale / 3 - scale / 25) / 2, themes[color_used].color1);
             }
             else {
                 for (int i = 0; i < 9; i++) {
                     for (int j = 0; j < 9; j++) {
                         if (matriz_incompleta[i][j][0] == matriz_incompleta[selected[0]][selected[1]][0]) {
-                            DrawCircleV({ num[i][j][0], num[i][j][1] }, (scale / 3 - scale / 25) / 2, color1);
+                            DrawCircleV({ num[i][j][0], num[i][j][1] }, (scale / 3 - scale / 25) / 2, themes[color_used].color1);
                             char resp[2];
                             sprintf_s(resp, "%d", matriz_incompleta[i][j][0]);
                             Vector2 offset = MeasureTextEx(GetFontDefault(), resp, scale * 9 / 40, 1);
-                            DrawTextEx(GetFontDefault(), resp, { num[i][j][0] - offset.x / 2, num[i][j][1] - offset.y / 2 }, scale * 9 / 40, 1, color4);
+                            DrawTextEx(GetFontDefault(), resp, { num[i][j][0] - offset.x / 2, num[i][j][1] - offset.y / 2 }, scale * 9 / 40, 1, themes[color_used].color4);
                         }
                     }
                 }
@@ -430,22 +450,23 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
         timer = time(NULL) - tempo + tempo_prev;
     }
 
-    ClearBackground(color2);
+    // Define a cor de background
+    ClearBackground(themes[color_used].color2);
 
     // Definição de temporizador
     char temp[10];
     sprintf_s(temp, "%d s", timer);
     Vector2 offset = MeasureTextEx(GetFontDefault(), temp, scale * 7 / 40, 2);
-    DrawTextEx(GetFontDefault(), temp, { stdPos[0] - offset.x / 2, stdPos[1] / 12 - offset.y / 2 }, scale * 7 / 40, 2, color1);
+    DrawTextEx(GetFontDefault(), temp, { stdPos[0] - offset.x / 2, stdPos[1] / 12 - offset.y / 2 }, scale * 7 / 40, 2, themes[color_used].color1);
 
     // Tela de fim de jogo
     if (vitoria == true) {
-        DrawRectangleV({ stdPos[0] - scale * 2 - scale * 0.02f, stdPos[1] - scale - scale * 0.02f }, { scale * 4 + scale * 0.04f, scale * 2 + scale * 0.04f }, color1);
-        DrawRectangleV({ stdPos[0] - scale * 2, stdPos[1] - scale }, { scale * 4, scale * 2 }, color2);
+        DrawRectangleV({ stdPos[0] - scale * 2 - scale * 0.02f, stdPos[1] - scale - scale * 0.02f }, { scale * 4 + scale * 0.04f, scale * 2 + scale * 0.04f }, themes[color_used].color1);
+        DrawRectangleV({ stdPos[0] - scale * 2, stdPos[1] - scale }, { scale * 4, scale * 2 }, themes[color_used].color2);
         Vector2 offset_2 = MeasureTextEx(GetFontDefault(), "Parabens, você venceu!", scale * 12 / 40, 5);
-        DrawTextEx(GetFontDefault(), "Parabens, voce venceu!", { stdPos[0] - offset_2.x / 2, stdPos[1] - scale / 2 - offset_2.y / 2 }, scale * 12 / 40, 5, color1);
+        DrawTextEx(GetFontDefault(), "Parabens, voce venceu!", { stdPos[0] - offset_2.x / 2, stdPos[1] - scale / 2 - offset_2.y / 2 }, scale * 12 / 40, 5, themes[color_used].color1);
         Vector2 offset_3 = MeasureTextEx(GetFontDefault(), "Clique para ver o placar", scale * 12 / 40, 5);
-        DrawTextEx(GetFontDefault(), "Clique para ver o placar", { stdPos[0] - offset_3.x / 2, stdPos[1] + scale / 2 - offset_3.y / 2 }, scale * 12 / 40, 5, color1);
+        DrawTextEx(GetFontDefault(), "Clique para ver o placar", { stdPos[0] - offset_3.x / 2, stdPos[1] + scale / 2 - offset_3.y / 2 }, scale * 12 / 40, 5, themes[color_used].color1);
     }
 
     EndDrawing();
@@ -494,8 +515,8 @@ int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3],
     BeginDrawing();
 
     // Cria uma área inicial
-    DrawRectangleV({ stdPos[0] - scale * 2 - scale * 0.02f, stdPos[1] - scale * 3 / 2 - scale * 0.02f }, { scale * 4 + scale * 0.04f, scale * 3 + scale * 0.04f }, color1);
-    DrawRectangleV({ stdPos[0] - scale * 2, stdPos[1] - scale * 3 / 2 }, { scale * 4, scale * 3 }, color3);
+    DrawRectangleV({ stdPos[0] - scale * 2 - scale * 0.02f, stdPos[1] - scale * 3 / 2 - scale * 0.02f }, { scale * 4 + scale * 0.04f, scale * 3 + scale * 0.04f }, themes[color_used].color1);
+    DrawRectangleV({ stdPos[0] - scale * 2, stdPos[1] - scale * 3 / 2 }, { scale * 4, scale * 3 }, themes[color_used].color3);
 
     // Definição da dificuldade a ser exposta no topo da tela
     char dif[15];
@@ -515,51 +536,51 @@ int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3],
 
     // Expõe a dificuldade da seção
     Vector2 offset0 = MeasureTextEx(GetFontDefault(), dif, scale / 4, 4);
-    DrawTextEx(GetFontDefault(), dif, { stdPos[0] - offset0.x / 2, stdPos[1] - scale * 1.8f - offset0.y / 2 }, scale / 4, 4, color1);
+    DrawTextEx(GetFontDefault(), dif, { stdPos[0] - offset0.x / 2, stdPos[1] - scale * 1.8f - offset0.y / 2 }, scale / 4, 4, themes[color_used].color1);
 
     // Expõe o título da seção
     Vector2 offset = MeasureTextEx(GetFontDefault(), "Tempos Obtidos", scale * 3 / 20, 3);
-    DrawTextEx(GetFontDefault(), "Tempos Obtidos", { stdPos[0] - offset.x / 2, stdPos[1] - scale * 1.35f - offset.y / 2 }, scale * 3 / 20, 3, color1);
+    DrawTextEx(GetFontDefault(), "Tempos Obtidos", { stdPos[0] - offset.x / 2, stdPos[1] - scale * 1.35f - offset.y / 2 }, scale * 3 / 20, 3, themes[color_used].color1);
 
     // Expõe tempos salvos
     // Melhores tempos
     Vector2 offset_1 = MeasureTextEx(GetFontDefault(), "Melhores Tempos:", scale / 9, 2);
-    DrawTextEx(GetFontDefault(), "Melhores Tempos:", { stdPos[0] - scale * 1.3f - offset_1.x / 2, stdPos[1] - scale * 1.15f - offset_1.y / 2 }, scale / 9, 2, color1);
+    DrawTextEx(GetFontDefault(), "Melhores Tempos:", { stdPos[0] - scale * 1.3f - offset_1.x / 2, stdPos[1] - scale * 1.15f - offset_1.y / 2 }, scale / 9, 2, themes[color_used].color1);
     for (int n = 0; n < num_melhor; n++) {
         // Datas
         char data[25];
         sprintf_s(data, "%02d:%02d   %02d/%02d/%d", melhor[n].horas, melhor[n].minutos, melhor[n].dia, melhor[n].mes + 1, melhor[n].ano + 1900);
         Vector2 offset1 = MeasureTextEx(GetFontDefault(), data, scale / 10, 2);
-        DrawTextEx(GetFontDefault(), data, { stdPos[0] - scale * 1.3f - offset1.x / 2, stdPos[1] - scale - offset1.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, color1);
+        DrawTextEx(GetFontDefault(), data, { stdPos[0] - scale * 1.3f - offset1.x / 2, stdPos[1] - scale - offset1.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, themes[color_used].color1);
         // Tempos
         char tempo[10];
         sprintf_s(tempo, "%d s", melhor[n].ponts);
         Vector2 offset2 = MeasureTextEx(GetFontDefault(), tempo, scale / 10, 2);
-        DrawTextEx(GetFontDefault(), tempo, { stdPos[0] + scale * 1.3f - offset2.x / 2, stdPos[1] - scale - offset2.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, color1);
+        DrawTextEx(GetFontDefault(), tempo, { stdPos[0] + scale * 1.3f - offset2.x / 2, stdPos[1] - scale - offset2.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, themes[color_used].color1);
         // Linha de separação
-        DrawLineEx({ stdPos[0] - scale * 1.85f, stdPos[1] - scale + offset1.y * 0.7f + offset1.y * 1.5f * n }, { stdPos[0] + scale * 1.85f, stdPos[1] - scale + offset1.y * 0.7f + offset1.y * 1.5f * n }, scale / 200, color1);
+        DrawLineEx({ stdPos[0] - scale * 1.85f, stdPos[1] - scale + offset1.y * 0.7f + offset1.y * 1.5f * n }, { stdPos[0] + scale * 1.85f, stdPos[1] - scale + offset1.y * 0.7f + offset1.y * 1.5f * n }, scale / 200, themes[color_used].color1);
     }
     // 10 últimos tempos
     Vector2 offset_2 = MeasureTextEx(GetFontDefault(), "Ultimos Tempos:", scale / 9, 2);
-    DrawTextEx(GetFontDefault(), "Ultimos Tempos:", { stdPos[0] - scale * 1.3f - offset_1.x / 2, stdPos[1] - scale / 2.5f - offset_1.y / 2 }, scale / 9, 2, color1);
+    DrawTextEx(GetFontDefault(), "Ultimos Tempos:", { stdPos[0] - scale * 1.3f - offset_1.x / 2, stdPos[1] - scale / 2.5f - offset_1.y / 2 }, scale / 9, 2, themes[color_used].color1);
     for (int n = 0; n < num_total; n++) {
         // Datas
         char data[25];
         sprintf_s(data, "%02d:%02d   %02d/%02d/%d", total[n].horas, total[n].minutos, total[n].dia, total[n].mes + 1, total[n].ano + 1900);
         Vector2 offset1 = MeasureTextEx(GetFontDefault(), data, scale / 10, 2);
-        DrawTextEx(GetFontDefault(), data, { stdPos[0] - scale * 1.3f - offset1.x / 2, stdPos[1] - scale / 4 - offset1.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, color1);
+        DrawTextEx(GetFontDefault(), data, { stdPos[0] - scale * 1.3f - offset1.x / 2, stdPos[1] - scale / 4 - offset1.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, themes[color_used].color1);
         // Tempos
         char tempo[10];
         sprintf_s(tempo, "%d s", total[n].ponts);
         Vector2 offset2 = MeasureTextEx(GetFontDefault(), tempo, scale / 10, 2);
-        DrawTextEx(GetFontDefault(), tempo, { stdPos[0] + scale * 1.3f - offset2.x / 2, stdPos[1] - scale / 4 - offset2.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, color1);
+        DrawTextEx(GetFontDefault(), tempo, { stdPos[0] + scale * 1.3f - offset2.x / 2, stdPos[1] - scale / 4 - offset2.y / 2 + offset1.y * 1.5f * n }, scale / 10, 2, themes[color_used].color1);
         // Linha de separação
-        DrawLineEx({ stdPos[0] - scale * 1.85f, stdPos[1] - scale / 4 + offset1.y * 0.7f + offset1.y * 1.5f * n }, { stdPos[0] + scale * 1.85f, stdPos[1] - scale / 4 + offset1.y * 0.7f + offset1.y * 1.5f * n }, scale / 200, color1);
+        DrawLineEx({ stdPos[0] - scale * 1.85f, stdPos[1] - scale / 4 + offset1.y * 0.7f + offset1.y * 1.5f * n }, { stdPos[0] + scale * 1.85f, stdPos[1] - scale / 4 + offset1.y * 0.7f + offset1.y * 1.5f * n }, scale / 200, themes[color_used].color1);
     }
 
     // Botão de Voltar
     Vector2 offset_3 = MeasureTextEx(GetFontDefault(), "Voltar ao Menu", scale / 7, 2);
-    DrawTextEx(GetFontDefault(), "Voltar ao Menu", { stdPos[0] - offset_3.x / 2, stdPos[1] + scale * 1.8f - offset_3.y / 2 }, scale / 7, 2, color1);
+    DrawTextEx(GetFontDefault(), "Voltar ao Menu", { stdPos[0] - offset_3.x / 2, stdPos[1] + scale * 1.8f - offset_3.y / 2 }, scale / 7, 2, themes[color_used].color1);
 
     // Detecção de clique do botão voltar
     Rectangle botao = { stdPos[0] - offset_3.x / 2, stdPos[1] + scale * 1.8f - offset_3.y / 2, offset_3.x,  offset_3.y };
@@ -569,18 +590,21 @@ int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3],
         }
     }
 
-    ClearBackground(color2);
+    //Define a cor do background
+    ClearBackground(themes[color_used].color2);
 
     EndDrawing();
 
     return 2;
 }
 
+// Escolha de uma casa aleatória para ser revelada
 bool Dica() {
-    // Escolha de uma casa aleatória para ser revelada
     srand(time(NULL));
     int* index = (int*) calloc(81, sizeof(int));
     int h = 0;
+
+    // Salva todas as casa vazias do jogo em um vetor
     if (index) {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
@@ -590,18 +614,64 @@ bool Dica() {
                 }
             }
         }
+        // Fornece uma dica quando houver mais de 1 casa vazia no Sudoku
         if (h > 1) {
             int revelada = index[rand() % h];
             matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][0] = matriz_resposta[(revelada - revelada % 9) / 9][revelada % 9];
             matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][1] = 1;
             // Penalidade de tempo pela dica
-            tempo_prev += 25;
+            tempo_prev += 30;
         }
+        // Retorna falso quando não for possível prover dicas
         else {
             return false;
         }
+
+        // Libera o vetor alocado
         free(index);
-        printf("Dica fornecida\n");
     }
     return true;
+}
+
+// Define globalmente o estado do botão de troca de cor
+bool show_colors = false;
+void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
+    Rectangle bot_cores[5];
+
+    // Desenha conjunto de cores disponíveis, quando ativado
+    if (show_colors == true) {
+        // Desenha faixa de fundo
+        DrawCircleV({ stdPos[0] + scale * 1.2f, stdPos[1] - scale * 1.7f }, scale / 5, themes[color_used].color3);
+        DrawLineEx({ stdPos[0] + scale * 1.2f, stdPos[1] - scale * 1.7f }, { stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f }, scale / 2.5f, themes[color_used].color3);
+        
+        // Desenha conjuntos de cores e define botões
+        for (int i = 0; i < 5; i++) {
+            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 5.5f, themes[color_used].color2);
+            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 13, themes[color_used].color1);
+            bot_cores[i] = {stdPos[0] + scale * (2.8f - 0.4f * i) - scale / 10, stdPos[1] - scale * 1.7f - scale / 10, scale / 5, scale / 5};
+        }
+    }
+
+    // Desenha o botão de troca de cor e define uma zona de colisão
+    DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f}, scale / 5, themes[color_used].color3);
+    DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f }, scale / 5.5, themes[color_used].color2);
+    DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f }, scale / 13, themes[color_used].color1);
+    Rectangle bot_cor = { stdPos[0] + scale * 3.2f - scale / 10, stdPos[1] - scale * 1.7f - scale / 10, scale / 5, scale / 5 };
+
+    // Mostra as opções de troca de cor, caso pressionado o botão
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (CheckCollisionPointRec(mousePoint, bot_cor)) {
+            if (show_colors == false)
+                show_colors = true;
+            else if (show_colors == true)
+                show_colors = false;
+        }
+        for (int i = 0; i < 5; i++) {
+            if (CheckCollisionPointRec(mousePoint, bot_cores[i]) && show_colors == true) {
+                color_used = i;
+                show_colors = false;
+                SaveConfig(i);
+            }
+        }
+    }
 }

@@ -127,7 +127,7 @@ void SaveConfig(int cor) {
 	FILE* config;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration", "w+");
+	error = fopen_s(&config, "configuration.txt", "w+");
 
 	if (error) {
 		printf("Erro em abir config para escrita. Erro %d\n", error);
@@ -147,7 +147,7 @@ int LoadConfig() {
 	FILE* config;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration", "r+");
+	error = fopen_s(&config, "configuration.txt", "r+");
 
 	// Identifica falha em carregar
 	if (error) {
@@ -156,10 +156,14 @@ int LoadConfig() {
 	}
 	else {
 		if (fscanf_s(config, "%d", &cor) != 1) {
-			printf("Erro ao salvar config\n");
+			printf("Erro ao ler config\n");
 			return 0;
 		}
-
+		// Atribui 0 quando assume valor inválido
+		if (cor > 4) {
+			cor = 0;
+		}
+		// Retorna o valor lido, quando possível
 		return cor;
 	}
 }
