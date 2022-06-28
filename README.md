@@ -7,6 +7,25 @@ Este repositório traz um jogo de Sudoku com interface gráfica, feito completam
 
 ## Funcionalidades
 
+### Menu Inicial com "Novo Jogo" e "Continuar"
+
+![Menu Inicial](https://i.imgur.com/o5MYPBd.png)
+
+### Diferentes Temas
+
+![Temas](https://i.imgur.com/BpwpEM6.png)
+
+### Placar com tempos
+
+![Placar](https://i.imgur.com/BwwcCpx.png)
+
+### Dicas e Anotações
+
+![Dicas](https://i.imgur.com/XAKZ4M1.png)
+
+### Você Venceu!
+
+![Vitoria](https://i.imgur.com/KbQs9AE.png)
 
 ## Códigos
 O código do programa é dividido em três arquivos principais, além de dois headers:
