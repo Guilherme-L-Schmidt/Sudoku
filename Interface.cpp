@@ -17,10 +17,10 @@ typedef struct {
 // Definição de cores possíveis no jogo
 cores_tema themes[5] = {
  { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} }, 
- { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} },
- { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} }, 
- { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} },
- { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} } };
+ { {0,96,138,255}, {13,22,29,255}, {18,53,72,255}, {157,175,192,255} },
+ { {186,85,93,255}, {255,255,255,255}, {239,233,234,255}, {115,115,115,255} },
+ { {105,160,191,255}, {249,249,249,255}, {220,220,220,255}, {127,127,127,255} },
+ { {226,123,30,255}, {52,51,51,255}, {116,116,116,255}, {213,213,213,255} } };
 
 // Determinação da cor a ser utilizada no jogo
 int color_used = LoadConfig();
@@ -491,6 +491,10 @@ bool Inserir(int i, int j) {
         matriz_incompleta[i][j][0] = tecla - 48;
         vitoria = Check();
     }
+    // Remove o número quando pressionado backspace ou delete
+    else if (GetKeyPressed() == KEY_BACKSPACE || GetKeyPressed() == KEY_DELETE) {
+        matriz_incompleta[i][j][0] = 0;
+    }
     return vitoria;
 }
 
@@ -646,9 +650,9 @@ void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
         
         // Desenha conjuntos de cores e define botões
         for (int i = 0; i < 5; i++) {
-            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 5.5f, themes[color_used].color2);
-            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 13, themes[color_used].color1);
-            bot_cores[i] = {stdPos[0] + scale * (2.8f - 0.4f * i) - scale / 10, stdPos[1] - scale * 1.7f - scale / 10, scale / 5, scale / 5};
+            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 5.5f, themes[i].color2);
+            DrawCircleV({ stdPos[0] + scale * (2.8f - 0.4f * i), stdPos[1] - scale * 1.7f }, scale / 13, themes[i].color1);
+            bot_cores[i] = {stdPos[0] + scale * (2.8f - 0.4f * i) - scale / 5, stdPos[1] - scale * 1.7f - scale / 5, scale / 2.5f, scale / 2.5f };
         }
     }
 
@@ -656,7 +660,7 @@ void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
     DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f}, scale / 5, themes[color_used].color3);
     DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f }, scale / 5.5, themes[color_used].color2);
     DrawCircleV({ stdPos[0] + scale * 3.2f, stdPos[1] - scale * 1.7f }, scale / 13, themes[color_used].color1);
-    Rectangle bot_cor = { stdPos[0] + scale * 3.2f - scale / 10, stdPos[1] - scale * 1.7f - scale / 10, scale / 5, scale / 5 };
+    Rectangle bot_cor = { stdPos[0] + scale * 3.2f - scale / 5, stdPos[1] - scale * 1.7f - scale / 5, scale / 2.5f, scale / 2.5f };
 
     // Mostra as opções de troca de cor, caso pressionado o botão
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {

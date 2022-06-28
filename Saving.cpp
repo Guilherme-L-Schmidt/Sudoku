@@ -124,13 +124,13 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* temp
 
 void SaveConfig(int cor) {
 	// Abre o arquivo de configurações
-	FILE* config;
+	FILE* config = NULL;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration.txt", "w+");
+	error = fopen_s(&config, "colors.txt", "w+");
 
-	if (error) {
-		printf("Erro em abir config para escrita. Erro %d\n", error);
+	if (config == NULL) {
+		printf("Erro em abrir config para escrita. Erro %d\n", error);
 	}
 	else {
 		// Salva a configuração de cor
@@ -144,18 +144,19 @@ int LoadConfig() {
 	int cor;
 
 	// Abre o arquivo de configurações
-	FILE* config;
+	FILE* config = NULL;
 	errno_t error;
 
-	error = fopen_s(&config, "configuration.txt", "r+");
+	error = fopen_s(&config, "colors.txt", "r+");
 
 	// Identifica falha em carregar
-	if (error) {
+	if (config == NULL) {
 		printf("Erro ao carregar config para leitura. Erro %d\n", error);
 		return 0;
 	}
 	else {
 		if (fscanf_s(config, "%d", &cor) != 1) {
+			fclose(config);
 			printf("Erro ao ler config\n");
 			return 0;
 		}
@@ -163,6 +164,9 @@ int LoadConfig() {
 		if (cor > 4) {
 			cor = 0;
 		}
+
+		fclose(config);
+
 		// Retorna o valor lido, quando possível
 		return cor;
 	}
