@@ -8,10 +8,10 @@
 
 // Definição do struct de cores
 typedef struct {
-    Color color1;       // Cor tema
-    Color color2;       // Background
-    Color color3;       // Cor destaque
-    Color color4;       // Cor texto 
+    Color color1;  // Cor tema
+    Color color2;  // Background
+    Color color3;  // Cor destaque
+    Color color4;  // Cor texto 
 } cores_tema;
 
 // Definição de cores possíveis no jogo (rgba)
@@ -36,7 +36,7 @@ bool vitoria = false;
 int timer = 0;
 int tempo_prev = 0;
 bool dicar = true;
-int*** annotation;
+int annotation[9][9][9];
 
 // Variáveis globais do Menu
 float grid_menu[8][2];
@@ -59,7 +59,7 @@ void Anotar(float stdPos[2], float scale, Vector2 mousePoint);
 
 // Função main
 int main(void) {
-    // Definição do tamanho da janela
+    // Definição do tamanho da janela a partir de arquivo
     int resolution[2];
     LoadRes(resolution);
     int screenWidth = resolution[0];
@@ -105,7 +105,7 @@ int main(void) {
                 
                 // Checa a existência de jogos salvos
                 for (int n = 0; n < 3; n++) {
-                    saved_games[n] = LoadGame(matriz_incompleta, matriz_resposta, n, &tempo_prev);
+                    saved_games[n] = LoadGame(matriz_incompleta, matriz_resposta, annotation, n, &tempo_prev);
                     tempo_prev = 0;
                 }
             }
@@ -121,14 +121,6 @@ int main(void) {
                 // Inicia o timer do jogo
                 tempo = time(NULL);
                 dicar = true;
-                // Alocação da matriz de anotações
-                annotation = (int***)calloc(9, sizeof(int**));
-                for (int i = 0; i < 9; i++) {
-                    annotation[i] = (int**)calloc(9, sizeof(int*));
-                    for (int j = 0; j < 9; j++) {
-                        annotation[i][j] = (int*)calloc(9, sizeof(int));
-                    }
-                }
             }
             // Muda o estado quando finalizado o jogo
             estado = Jogo(selected, scale, stdPos, tempo);            
@@ -148,7 +140,7 @@ int main(void) {
     }
     if (estado == 1) {
         printf("Salvo\n");
-        SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
+        SaveGame(matriz_incompleta, matriz_resposta, annotation, dificuldade, timer);
     }
 
     // Fechamento da janela e do contexto OpenGL
@@ -324,7 +316,7 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
                     break;
                 case 3:
                     if (saved_games[dificuldade]) {
-                        LoadGame(matriz_incompleta, matriz_resposta, dificuldade, &tempo_prev);
+                        LoadGame(matriz_incompleta, matriz_resposta, annotation, dificuldade, &tempo_prev);
                         return 1;
                     }
                     break;
@@ -453,17 +445,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
             }
             // Seleção do botão voltar
             if (CheckCollisionPointRec(mousePoint, voltar)) {
-                SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
-
-                // Libera a matriz de anotações
-                for (int i = 0; i < 9; i++) {
-                    for (int j = 0; j < 9; j++) {
-                        free(annotation[i][j]);
-                    }
-                    free(annotation[i]);
-                }
-                free(annotation);
-
+                SaveGame(matriz_incompleta, matriz_resposta, annotation, dificuldade, timer);
                 return 0;
             }
             // Seleção do botão dica
@@ -534,16 +516,6 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
             SaveAllScores(timer, dificuldade);
             SaveHighScores(timer, dificuldade);
             vitoria = false;
-
-            // Libera a matriz de anotações
-            for (int i = 0; i < 9; i++) {
-                for (int j = 0; j < 9; j++) {
-                    free(annotation[i][j]);
-                }
-                free(annotation[i]);
-            }
-            free(annotation);
-
             return 2;
         }
     }

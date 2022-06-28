@@ -12,7 +12,7 @@ typedef struct {
 	int ano;
 } tempos;
 
-void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int tempo) {
+void SaveGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], int dificuldade, int tempo) {
 	// Abre o arquivo em que será salvo o jogo
 	FILE *jogo = NULL;
 	errno_t error;
@@ -53,6 +53,17 @@ void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int temp
 			}
 		}
 
+		// Salva a matriz de anotações do jogo
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				for (int k = 0; k < 9; k++) {
+					fprintf(jogo, "%d ", annotation[i][j][k]);
+				}
+				fprintf(jogo, "\n");
+			}
+			fprintf(jogo, "\n");
+		}
+
 		// Salva o tempo de jogo
 		fprintf(jogo, "%d", tempo);
 
@@ -62,7 +73,7 @@ void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int temp
 	}
 }
 
-int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* tempo) {
+int LoadGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], int dificuldade, int* tempo) {
 	// Abre o arquivo em que foi salvo o jogo
 	FILE* jogo = NULL;
 	errno_t error;
@@ -105,6 +116,18 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* temp
 				if (fscanf_s(jogo, "%d", &resposta[i][j]) != 1) {
 					printf("Erro ao ler respostas\n");
 					return 0;
+				}
+			}
+		}
+
+		// Carrega a matriz de anotações do jogo
+		for (int i = 0; i < 9; i++) {
+			for (int j = 0; j < 9; j++) {
+				for (int k = 0; k < 9; k++) {
+					if (fscanf_s(jogo, "%d", &annotation[i][j][k]) != 1) {
+						printf("Erro ao ler anotacoes\n");
+						return 0;
+					}
 				}
 			}
 		}
