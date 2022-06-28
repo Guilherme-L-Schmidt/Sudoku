@@ -14,25 +14,29 @@ typedef struct {
     Color color4;       // Cor texto 
 } cores_tema;
 
-// Definição de cores possíveis no jogo
+// Definição de cores possíveis no jogo (rgba)
 cores_tema themes[5] = {
  { {47,160,46,255}, {17,17,17,255}, {38,35,31,255}, {200,213,200,255} }, 
  { {0,96,138,255}, {13,22,29,255}, {18,53,72,255}, {157,175,192,255} },
  { {186,85,93,255}, {255,255,255,255}, {239,233,234,255}, {115,115,115,255} },
  { {105,160,191,255}, {249,249,249,255}, {220,220,220,255}, {127,127,127,255} },
- { {226,123,30,255}, {52,51,51,255}, {116,116,116,255}, {213,213,213,255} } };
+ { {226,123,30,255}, {52,51,51,255}, {89,89,89,255}, {213,213,213,255} } };
 
 // Determinação da cor a ser utilizada no jogo
 int color_used = LoadConfig();
 
+// Define globalmente o estado do botão de anotação
+bool anotar = false;
+
 // Variáveis globais do Sudoku
-float grid[8][2], pontos[9][24][2], num[9][9][2];
+float grid[8][2], pontos[9][24][2], num[9][9][2], place_annotation[9][9][9][2];
 float quadrado[3][3][2];
 Rectangle bot[9][9];
 bool vitoria = false;
 int timer = 0;
 int tempo_prev = 0;
 bool dicar = true;
+int*** annotation;
 
 // Variáveis globais do Menu
 float grid_menu[8][2];
@@ -40,6 +44,7 @@ float bot_menu_pos[6][2];
 Rectangle bot_menu[5];
 int dificuldade = 1;
 
+// Declaração de funções empregadas ao longo do código
 void SudokuPoints(float scale, float pos[2]);
 void GenerateSudoku(float scale);
 void MenuPoints(float scale, float pos[2]);
@@ -50,7 +55,9 @@ bool Check();
 int ScoreBoard(float stdPos[2], float scale, tempos total[10], tempos melhor[3], int num_melhor, int num_total);
 bool Dica();
 void Cores(float stdPos[2], float scale, Vector2 mousePoint);
+void Anotar(float stdPos[2], float scale, Vector2 mousePoint);
 
+// Função main
 int main(void) {
     // Definição do tamanho da janela
     int screenWidth = 1280;
@@ -112,6 +119,14 @@ int main(void) {
                 // Inicia o timer do jogo
                 tempo = time(NULL);
                 dicar = true;
+                // Alocação da matriz de anotações
+                annotation = (int***)calloc(9, sizeof(int**));
+                for (int i = 0; i < 9; i++) {
+                    annotation[i] = (int**)calloc(9, sizeof(int*));
+                    for (int j = 0; j < 9; j++) {
+                        annotation[i][j] = (int*)calloc(9, sizeof(int));
+                    }
+                }
             }
             // Muda o estado quando finalizado o jogo
             estado = Jogo(selected, scale, stdPos, tempo);            
@@ -179,8 +194,17 @@ void SudokuPoints(float scale, float pos[2]) {
         for (int j = 0; j < 9; j++) {
             num[i][j][0] = pos[0] + (j - 4) * scale / 3;
             num[i][j][1] = pos[1] + (i - 4) * scale / 3;
+            // Definição da posição de anotações
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    place_annotation[i][j][3 * k + l][0] = num[i][j][0] + (l - 1) * scale / 10;
+                    place_annotation[i][j][3 * k + l][1] = num[i][j][1] + (k - 1) * scale / 10;
+                }
+            }
         }
     }
+
+    // 
 
     // Definição de botões para cada ponto
     for (int i = 0; i < 9; i++) {
@@ -218,6 +242,14 @@ void GenerateSudoku(float scale) {
                     DrawCircleV({ num[i][j][0], num[i][j][1] }, (scale / 3 - scale / 25) / 2, themes[color_used].color3);
                 }
                 DrawTextEx(GetFontDefault(), resp, { num[i][j][0] - offset.x / 2, num[i][j][1] - offset.y / 2 }, scale * 9 / 40, 1, themes[color_used].color4);
+            }
+            for (int k = 0; k < 9; k++) {
+                if (annotation[i][j][k] != 0) {
+                    char resp[2];
+                    sprintf_s(resp, "%d", annotation[i][j][k]);
+                    Vector2 offset = MeasureTextEx(GetFontDefault(), resp, scale / 10, 1);
+                    DrawTextEx(GetFontDefault(), resp, { place_annotation[i][j][k][0] - offset.x / 2, place_annotation[i][j][k][1] - offset.y / 2}, scale / 10, 1, themes[color_used].color4);
+                }
             }
         }
     }
@@ -387,6 +419,9 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
     DrawLineEx({ scale / 2 - scale / 28, scale / 2 }, { scale / 2 + scale / 28, scale / 2 - scale / 14 }, scale / 90, themes[color_used].color4);
     Rectangle voltar = { scale / 2 - scale / 9, scale / 2 - scale / 9,  scale * 2 / 9, scale * 2 / 9 };
 
+    // Implementação do botão anotar
+    Anotar(stdPos, scale, mousePoint);
+
     // Definição do botão dica
     // Muda a cor caso não seja mais possível dar dicas
     Color cor1_dica = themes[color_used].color3, cor2_dica = themes[color_used].color3;
@@ -405,21 +440,31 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
     if (vitoria == false) {
         // Detecção de cliques em casas do Sudoku
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            //printf("solto \n");
             selected[0] = 10;
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
                     if (CheckCollisionPointRec(mousePoint, bot[i][j])) {
                         selected[0] = i;
                         selected[1] = j;
-                        //printf("colisao \n \n");
                     }
                 }
             }
+            // Seleção do botão voltar
             if (CheckCollisionPointRec(mousePoint, voltar)) {
                 SaveGame(matriz_incompleta, matriz_resposta, dificuldade, timer);
+
+                // Libera a matriz de anotações
+                for (int i = 0; i < 9; i++) {
+                    for (int j = 0; j < 9; j++) {
+                        free(annotation[i][j]);
+                    }
+                    free(annotation[i]);
+                }
+                free(annotation);
+
                 return 0;
             }
+            // Seleção do botão dica
             else if (CheckCollisionPointRec(mousePoint, dica)) {
                 dicar = Dica();
             }
@@ -427,9 +472,19 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
 
         // Destaque da casa selecionada e de demais relevantes
         if (selected[0] != 10) {
+            // Destaque somente da casa selecionada, quando 0
             if (matriz_incompleta[selected[0]][selected[1]][0] == 0) {
                 DrawCircleV({ num[selected[0]][selected[1]][0], num[selected[0]][selected[1]][1] }, (scale / 3 - scale / 25) / 2, themes[color_used].color1);
+                for (int i = 0; i < 9; i++) {
+                    if (annotation[selected[0]][selected[1]][i] != 0) {
+                        char resp[2];
+                        sprintf_s(resp, "%d", annotation[selected[0]][selected[1]][i]);
+                        Vector2 offset = MeasureTextEx(GetFontDefault(), resp, scale / 10, 1);
+                        DrawTextEx(GetFontDefault(), resp, { place_annotation[selected[0]][selected[1]][i][0] - offset.x / 2, place_annotation[selected[0]][selected[1]][i][1] - offset.y / 2 }, scale / 10, 1, themes[color_used].color4);
+                    }
+                }
             }
+            // Destaque de todas as casas de mesmo número, quando não
             else {
                 for (int i = 0; i < 9; i++) {
                     for (int j = 0; j < 9; j++) {
@@ -471,11 +526,22 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
 
     EndDrawing();
 
+    // Em caso de vitória, transfere para o scoreboard ao pressionar o botão esquerdo do mouse
     if (vitoria == true) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             SaveAllScores(timer, dificuldade);
             SaveHighScores(timer, dificuldade);
             vitoria = false;
+
+            // Libera a matriz de anotações
+            for (int i = 0; i < 9; i++) {
+                for (int j = 0; j < 9; j++) {
+                    free(annotation[i][j]);
+                }
+                free(annotation[i]);
+            }
+            free(annotation);
+
             return 2;
         }
     }
@@ -488,12 +554,37 @@ bool Inserir(int i, int j) {
     int tecla = GetCharPressed();
     int vitoria = false;
     if (tecla - 48 > -1 && tecla - 48 < 10) {
-        matriz_incompleta[i][j][0] = tecla - 48;
-        vitoria = Check();
+        // Insere anotações
+        if (anotar) {
+            if (tecla - 48 > 0) {
+                // Retira o número inserido, caso já presente na anotação
+                if (annotation[i][j][tecla - 49] == tecla - 48)
+                    annotation[i][j][tecla - 49] = 0;
+                else
+                    annotation[i][j][tecla - 49] = tecla - 48;
+                matriz_incompleta[i][j][0] = 0;
+            }
+            else {
+                for (int x = 0; x < 9; x++) {
+                    annotation[i][j][x] = 0;
+                }
+            }
+        }
+        // Insere os números esperados
+        else {
+            matriz_incompleta[i][j][0] = tecla - 48;
+            vitoria = Check();
+            for (int x = 0; x < 9; x++) {
+                annotation[i][j][x] = 0;
+            }
+        }
     }
     // Remove o número quando pressionado backspace ou delete
     else if (GetKeyPressed() == KEY_BACKSPACE || GetKeyPressed() == KEY_DELETE) {
         matriz_incompleta[i][j][0] = 0;
+        for (int x = 0; x < 9; x++) {
+            annotation[i][j][x] = 0;
+        }
     }
     return vitoria;
 }
@@ -623,6 +714,9 @@ bool Dica() {
             int revelada = index[rand() % h];
             matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][0] = matriz_resposta[(revelada - revelada % 9) / 9][revelada % 9];
             matriz_incompleta[(revelada - revelada % 9) / 9][revelada % 9][1] = 1;
+            for (int i = 0; i < 9; i++) {
+                annotation[(revelada - revelada % 9) / 9][revelada % 9][i] = 0;
+            }
             // Penalidade de tempo pela dica
             tempo_prev += 30;
         }
@@ -639,6 +733,7 @@ bool Dica() {
 
 // Define globalmente o estado do botão de troca de cor
 bool show_colors = false;
+// Troca as cores do jogo e salva a escolhida
 void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
     Rectangle bot_cores[5];
 
@@ -674,8 +769,36 @@ void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
             if (CheckCollisionPointRec(mousePoint, bot_cores[i]) && show_colors == true) {
                 color_used = i;
                 show_colors = false;
+                // Salva o cor escolhida
                 SaveConfig(i);
             }
+        }
+    }
+}
+
+// Definição do botão de anotações
+void Anotar(float stdPos[2], float scale, Vector2 mousePoint) {
+    Color cor_bot;
+    // Troca a cor utilizada a Depender do estado do botão
+    if (anotar)
+        cor_bot = themes[color_used].color1;
+    else
+        cor_bot = themes[color_used].color2;
+
+    // Desenha o botão de anotação
+    DrawCircleV({ stdPos[0] + scale * 2.8f, stdPos[1] }, scale / 5, themes[color_used].color3);
+    DrawCircleV({ stdPos[0] + scale * 2.8f, stdPos[1] }, scale / 5.5, cor_bot);
+    Vector2 offset = MeasureTextEx(GetFontDefault(), "A", scale / 4, 1);
+    DrawTextEx(GetFontDefault(), "A", { stdPos[0] + scale * 2.8f - offset.x / 2, stdPos[1] - offset.y / 2}, scale / 4, 1, themes[color_used].color4);
+    Rectangle bot_ano = { stdPos[0] + scale * 2.8f - scale / 5, stdPos[1] - scale / 5, scale / 2.5f, scale / 2.5f };
+
+    // Troca o estado do botão quando pressionado
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (CheckCollisionPointRec(mousePoint, bot_ano)) {
+            if (anotar == false)
+                anotar = true;
+            else
+                anotar = false;
         }
     }
 }
