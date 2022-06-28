@@ -311,6 +311,13 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
                         break;
                     }
                     SudokuCreation(dif);
+                    for (int i = 0; i < 9; i++) {
+                        for (int j = 0; j < 9; j++) {
+                            for (int k = 0; k < 9; k++) {
+                                annotation[i][j][k] = 0;
+                            }
+                        }
+                    }
                     }
                     return 1;
                     break;
