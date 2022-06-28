@@ -122,7 +122,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* temp
 	}
 }
 
-void SaveConfig(int cor) {
+void SaveColors(int cor) {
 	// Abre o arquivo de configurações
 	FILE* config = NULL;
 	errno_t error;
@@ -140,7 +140,7 @@ void SaveConfig(int cor) {
 	}
 }
 
-int LoadConfig() {
+int LoadColors() {
 	int cor;
 
 	// Abre o arquivo de configurações
@@ -414,4 +414,44 @@ int LoadHighScores(int dificuldade, tempos saves[3]) {
 	}
 
 	return count;
+}
+
+// Carrega a resolução do jogo
+void LoadRes(int resolution[2]) {
+	// Abre o arquivo de resolução
+	FILE* resol;
+	errno_t error;
+	resolution[0] = 1280;
+	resolution[1] = 720;
+
+	bool falha = false;
+	error = fopen_s(&resol, "resolution.txt", "r+");
+
+	// Verifica se foi possível abrir
+	if (resol == NULL) {
+		printf("Erro em abrir resolution para leitura. Erro %d\n", error);
+		falha = true;
+	}
+	else {
+		// Lê a resolução salva
+		for (int i = 0; i < 2; i++) {
+			if (fscanf_s(resol, "%d", &resolution[i]) != 1) {
+				printf("Erro em ler resolution");
+				falha = true;
+			}
+		}
+
+		fclose(resol);
+	}
+
+	if (falha) {
+		error = fopen_s(&resol, "resolution.txt", "w+");
+		if (resol == NULL) {
+			printf("Erro em abrir resolution para escrita. Erro %d\n", error);
+		}
+		else {
+			fprintf(resol, "1280\n720");
+			fclose(resol);
+		}
+	}
 }

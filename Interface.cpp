@@ -23,7 +23,7 @@ cores_tema themes[5] = {
  { {226,123,30,255}, {52,51,51,255}, {89,89,89,255}, {213,213,213,255} } };
 
 // Determinação da cor a ser utilizada no jogo
-int color_used = LoadConfig();
+int color_used = LoadColors();
 
 // Define globalmente o estado do botão de anotação
 bool anotar = false;
@@ -60,8 +60,10 @@ void Anotar(float stdPos[2], float scale, Vector2 mousePoint);
 // Função main
 int main(void) {
     // Definição do tamanho da janela
-    int screenWidth = 1280;
-    int screenHeight = 720;
+    int resolution[2];
+    LoadRes(resolution);
+    int screenWidth = resolution[0];
+    int screenHeight = resolution[1];
 
     // Definição da posição do Sudoku e de sua escala
     float stdPos[2] = {(float)screenWidth / 2, (float)screenHeight / 2};
@@ -770,7 +772,7 @@ void Cores(float stdPos[2], float scale, Vector2 mousePoint) {
                 color_used = i;
                 show_colors = false;
                 // Salva o cor escolhida
-                SaveConfig(i);
+                SaveColors(i);
             }
         }
     }

@@ -13,11 +13,12 @@ typedef struct {
 
 void SaveGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int tempo);
 int LoadGame(int matriz[9][9][3], int resposta[9][9], int dificuldade, int* tempo);
-void SaveConfig(int cor);
-int LoadConfig();
+void SaveColors(int cor);
+int LoadColors();
 void SaveAllScores(int score, int dificuldade);
 void SaveHighScores(int score, int dificuldade);
 int LoadAllScores(int dificuldade, tempos saves[10]);
 int LoadHighScores(int dificuldade, tempos saves[3]);
+void LoadRes(int resolution[2]);
 
 #endif
