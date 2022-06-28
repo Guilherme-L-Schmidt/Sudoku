@@ -311,6 +311,7 @@ int Menu(float scale, float pos[2], bool saved_games[3]) {
                         break;
                     }
                     SudokuCreation(dif);
+                    WipeSave(dificuldade);
                     for (int i = 0; i < 9; i++) {
                         for (int j = 0; j < 9; j++) {
                             for (int k = 0; k < 9; k++) {
@@ -523,6 +524,7 @@ int Jogo(int selected[2], float scale, float stdPos[2], time_t tempo) {
             SaveAllScores(timer, dificuldade);
             SaveHighScores(timer, dificuldade);
             vitoria = false;
+            WipeSave(dificuldade);
             return 2;
         }
     }

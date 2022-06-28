@@ -12,6 +12,36 @@ typedef struct {
 	int ano;
 } tempos;
 
+void WipeSave(int dificuldade) {
+	// Abre o arquivo em que será salvo o jogo
+	FILE* jogo = NULL;
+	errno_t error;
+
+	// Checa qual dos arquivos abrir, baseado na dificuldade
+	switch (dificuldade) {
+	case 0:
+		error = fopen_s(&jogo, "save_game_facil.txt", "w+");
+		break;
+	case 1:
+		error = fopen_s(&jogo, "save_game_medio.txt", "w+");
+		break;
+	case 2:
+	default:
+		error = fopen_s(&jogo, "save_game_dificil.txt", "w+");
+		break;
+	}
+
+	// Detecta se houveram erros ao abrir o arquivo
+	if (jogo == NULL) {
+		printf("Erro ao abrir save_game (wipe). Erro %d\n", error);
+	}
+	else {
+		fprintf(jogo, "0");
+		fclose(jogo);
+		printf("Save anterior apagado\n");
+	}
+}
+
 void SaveGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], int dificuldade, int tempo) {
 	// Abre o arquivo em que será salvo o jogo
 	FILE *jogo = NULL;
@@ -104,6 +134,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], i
 				for (int j = 0; j < 9; j++) {
 					if (fscanf_s(jogo, "%d", &matriz[i][j][k]) != 1) {
 						printf("Erro ao ler matriz\n");
+						fclose(jogo);
 						return 0;
 					}
 				}
@@ -115,6 +146,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], i
 			for (int j = 0; j < 9; j++) {
 				if (fscanf_s(jogo, "%d", &resposta[i][j]) != 1) {
 					printf("Erro ao ler respostas\n");
+					fclose(jogo);
 					return 0;
 				}
 			}
@@ -126,6 +158,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], i
 				for (int k = 0; k < 9; k++) {
 					if (fscanf_s(jogo, "%d", &annotation[i][j][k]) != 1) {
 						printf("Erro ao ler anotacoes\n");
+						fclose(jogo);
 						return 0;
 					}
 				}
@@ -135,6 +168,7 @@ int LoadGame(int matriz[9][9][3], int resposta[9][9], int annotation[9][9][9], i
 		// Carrega o tempo de jogo
 		if (fscanf_s(jogo, "%d", tempo) != 1) {
 			printf("Erro ao ler tempo\n");
+			fclose(jogo);
 			return 0;
 		}
 
