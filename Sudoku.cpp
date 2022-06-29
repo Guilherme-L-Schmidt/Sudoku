@@ -53,22 +53,6 @@ void SudokuCreation(int dificuldade) {
 				matriz_incompleta[i][j][1] = 1;
 		}
 	}
-	
-	// Printar matriz resposta
-	
-	for (int i = 0; i < 9; i++) {
-		for (int j = 0; j < 9; j++) {
-			printf("%d ", matriz_resposta[i][j]);
-			if (j == 2 || j == 5)
-				printf("| ");
-		}
-		printf("\n");
-		if (i == 2 || i == 5) {
-			printf("---------------------- \n");
-		}
-	}
-	printf("\n \n");
-	
 }
 
 void GerarResposta() {
