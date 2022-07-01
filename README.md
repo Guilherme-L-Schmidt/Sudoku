@@ -40,7 +40,9 @@ Contém todos os códigos referentes à interface gráfica, sendo responsável t
 Este arquivo lida com todo o sistema de save do programa, escrevendo e lendo arquivos tratando de jogos não terminados, tempos obtidos previamente, cores-tema escolhidas, e resolução adotada. É complementado pelo header Saving.h, que leva suas funções e variáveis ao Interface.cpp.
 
 ## Compilação
-Para que o programa seja adequadamente compilado, é necessária a inclusão da bilblioteca gráfica [Raylib](https://www.raylib.com/). Realizando o download da biblioteca em sua pégina, basta compilá-la através do compilador já fornecido e referenciar os caminhos necessários em sua IDE. A seguir temos um exemplo das referências utilizando o Visual Studio: as regiões marcadas em negrito são os endereços dos arquivos a serem linkados.
+Para que o programa seja adequadamente compilado, é necessária a inclusão da bilblioteca gráfica [Raylib](https://www.raylib.com/). Um tutorial de instalação da biblioteca pode ser encontrado no link https://youtu.be/nFMAusIi000.
+
+Realizando o download da biblioteca em sua pégina, basta compilá-la através do compilador já fornecido e referenciar os caminhos necessários em sua IDE. A seguir temos um exemplo das referências utilizando o Visual Studio: as regiões marcadas em negrito são os endereços dos arquivos a serem linkados.
 
 ![VC++ Directories](https://i.imgur.com/ao7T1xR.png)
 
